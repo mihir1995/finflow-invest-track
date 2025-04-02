@@ -1,6 +1,6 @@
 
-import React from "react";
-import { useNavigate, Link } from "react-router-dom";
+import React, { useEffect } from "react";
+import { useNavigate, Link, useLocation } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import MobileLayout from "@/components/layout/MobileLayout";
 import { Card } from "@/components/ui/card";
@@ -8,10 +8,25 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { toast } from "sonner";
+import { useAuth } from "@/contexts/AuthContext";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+
+const signupSchema = z.object({
+  name: z.string().min(2, "Name must be at least 2 characters"),
+  email: z.string().email("Please enter a valid email"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
+});
+
+type SignupFormValues = z.infer<typeof signupSchema>;
 
 const Signup = () => {
   const navigate = useNavigate();
-  const form = useForm({
+  const location = useLocation();
+  const { signup, isAuthenticated } = useAuth();
+  
+  const form = useForm<SignupFormValues>({
+    resolver: zodResolver(signupSchema),
     defaultValues: {
       name: "",
       email: "",
@@ -19,11 +34,23 @@ const Signup = () => {
     },
   });
 
-  const onSubmit = (data: { name: string; email: string; password: string }) => {
-    // Mock signup functionality for now
-    console.log("Signup attempt:", data);
-    toast.success("Account created successfully");
-    navigate("/login");
+  // If user is already authenticated, redirect to home
+  useEffect(() => {
+    if (isAuthenticated) {
+      const from = location.state?.from?.pathname || "/";
+      navigate(from, { replace: true });
+    }
+  }, [isAuthenticated, navigate, location]);
+
+  const onSubmit = async (data: SignupFormValues) => {
+    const success = await signup(data.name, data.email, data.password);
+    
+    if (success) {
+      toast.success("Account created successfully");
+      navigate("/");
+    } else {
+      toast.error("Signup failed. Please try again.");
+    }
   };
 
   return (

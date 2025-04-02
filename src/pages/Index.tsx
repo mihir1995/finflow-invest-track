@@ -6,11 +6,14 @@ import RecentTransactions from "@/components/dashboard/RecentTransactions";
 import InvestmentChartCard from "@/components/dashboard/InvestmentChartCard";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { LogIn, UserRound } from "lucide-react";
+import { LogOut, Settings, User, UserRound } from "lucide-react";
+import { Transaction } from "@/types";
+import { useAuth } from "@/contexts/AuthContext";
+import UserMenu from "@/components/user/UserMenu";
 
 const Index = () => {
   const navigate = useNavigate();
-  const isLoggedIn = false; // This would be replaced by actual auth state
+  const { isAuthenticated, user } = useAuth();
 
   // Mock data
   const balanceData = {
@@ -21,13 +24,13 @@ const Index = () => {
     investmentGrowth: 3.2,
   };
 
-  const recentTransactions = [
+  const recentTransactions: Transaction[] = [
     {
       id: "t1",
       title: "Coffee Shop",
       amount: 5.75,
       date: "Today, 9:15 AM",
-      type: "expense" as const,
+      type: "expense",
       category: "food",
       currency: "USD",
     },
@@ -36,7 +39,7 @@ const Index = () => {
       title: "Salary Deposit",
       amount: 3200.00,
       date: "Yesterday",
-      type: "income" as const,
+      type: "income",
       category: "salary",
       currency: "USD",
       isRecurring: true,
@@ -47,7 +50,7 @@ const Index = () => {
       title: "Amazon Purchase",
       amount: 43.95,
       date: "Mar 15, 2023",
-      type: "expense" as const,
+      type: "expense",
       category: "shopping",
       currency: "USD",
     },
@@ -56,7 +59,7 @@ const Index = () => {
       title: "S&P 500 ETF",
       amount: 500.00,
       date: "Mar 12, 2023",
-      type: "investment" as const,
+      type: "investment",
       category: "investment",
       currency: "USD",
       isRecurring: true,
@@ -67,7 +70,7 @@ const Index = () => {
       title: "Fixed Deposit",
       amount: 50000.00,
       date: "Mar 10, 2023",
-      type: "investment" as const,
+      type: "investment",
       category: "investment",
       currency: "INR",
     },
@@ -87,15 +90,6 @@ const Index = () => {
     navigate('/transactions');
   };
   
-  const handleLoginClick = () => {
-    navigate('/login');
-  };
-
-  const handleProfileClick = () => {
-    // This would navigate to a profile page in a real app
-    navigate('/login');
-  };
-  
   return (
     <MobileLayout>
       <div className="px-4 py-6 space-y-6">
@@ -104,19 +98,7 @@ const Index = () => {
             <h1 className="text-2xl font-bold">FinFlow</h1>
             <p className="text-muted-foreground text-sm">Track your finances with ease</p>
           </div>
-          {isLoggedIn ? (
-            <div 
-              onClick={handleProfileClick}
-              className="h-10 w-10 rounded-full bg-secondary flex items-center justify-center cursor-pointer"
-            >
-              <UserRound className="h-6 w-6" />
-            </div>
-          ) : (
-            <Button size="sm" variant="outline" onClick={handleLoginClick}>
-              <LogIn className="h-4 w-4 mr-2" />
-              Login
-            </Button>
-          )}
+          {isAuthenticated && <UserMenu user={user} />}
         </div>
         
         <BalanceSummary {...balanceData} />
