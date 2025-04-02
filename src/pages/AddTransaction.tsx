@@ -44,7 +44,12 @@ const AddTransaction = () => {
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
-    const data = Object.fromEntries(formData);
+    const data: Record<string, string | boolean | RecurrenceOption | CurrencyCode> = {};
+    
+    // Process form data entries
+    formData.forEach((value, key) => {
+      data[key] = value.toString();
+    });
     
     // Add custom fields
     data.type = transactionType;
