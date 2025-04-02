@@ -1,8 +1,9 @@
 
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowUpRight, ArrowDownRight, Coffee, ShoppingBag, Briefcase, Droplet, Cpu } from "lucide-react";
+import { ArrowUpRight, ArrowDownRight, Coffee, ShoppingBag, Briefcase, Droplet, Cpu, Repeat } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { CurrencyCode, formatCurrency } from "@/utils/currency";
 
 export type TransactionType = "expense" | "income" | "investment";
 
@@ -13,6 +14,9 @@ export interface Transaction {
   date: string;
   type: TransactionType;
   category: string;
+  isRecurring?: boolean;
+  recurrence?: string;
+  currency?: CurrencyCode;
 }
 
 interface RecentTransactionsProps {
@@ -46,12 +50,13 @@ const RecentTransactions = ({ transactions, onViewAll }: RecentTransactionsProps
             const isExpense = transaction.type === "expense";
             const isIncome = transaction.type === "income";
             const isInvestment = transaction.type === "investment";
+            const currency = transaction.currency || "USD";
             
             return (
               <li key={transaction.id} className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className={cn(
-                    "p-2 rounded-lg",
+                    "p-2 rounded-lg relative",
                     isExpense && "bg-red-100",
                     isIncome && "bg-green-100",
                     isInvestment && "bg-blue-100"
@@ -62,10 +67,23 @@ const RecentTransactions = ({ transactions, onViewAll }: RecentTransactionsProps
                       isIncome && "text-finance-income",
                       isInvestment && "text-finance-investment"
                     )} />
+                    
+                    {transaction.isRecurring && (
+                      <span className="absolute -top-1 -right-1 bg-secondary rounded-full w-4 h-4 flex items-center justify-center">
+                        <Repeat className="w-3 h-3" />
+                      </span>
+                    )}
                   </div>
                   
                   <div>
-                    <p className="font-medium text-sm">{transaction.title}</p>
+                    <div className="flex items-center gap-1">
+                      <p className="font-medium text-sm">{transaction.title}</p>
+                      {transaction.isRecurring && (
+                        <span className="text-xs text-muted-foreground">
+                          ({transaction.recurrence})
+                        </span>
+                      )}
+                    </div>
                     <p className="text-xs text-muted-foreground">{transaction.date}</p>
                   </div>
                 </div>
@@ -82,7 +100,7 @@ const RecentTransactions = ({ transactions, onViewAll }: RecentTransactionsProps
                     isIncome && "text-finance-income",
                     isInvestment && "text-finance-investment"
                   )}>
-                    ${transaction.amount.toLocaleString()}
+                    {formatCurrency(transaction.amount, currency)}
                   </span>
                 </div>
               </li>

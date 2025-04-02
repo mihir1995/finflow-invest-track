@@ -10,6 +10,8 @@ import Transactions from "./pages/Transactions";
 import AddTransaction from "./pages/AddTransaction";
 import Investments from "./pages/Investments";
 import Reports from "./pages/Reports";
+import Login from "./pages/Login";
+import Signup from "./pages/Signup";
 
 const queryClient = new QueryClient();
 
@@ -25,6 +27,8 @@ const App = () => (
           <Route path="/add-transaction" element={<AddTransaction />} />
           <Route path="/investments" element={<Investments />} />
           <Route path="/reports" element={<Reports />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/signup" element={<Signup />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
