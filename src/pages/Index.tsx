@@ -1,21 +1,24 @@
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import MobileLayout from "@/components/layout/MobileLayout";
 import BalanceSummary from "@/components/dashboard/BalanceSummary";
 import RecentTransactions from "@/components/dashboard/RecentTransactions";
 import InvestmentChartCard from "@/components/dashboard/InvestmentChartCard";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { LogOut, Settings, User, UserRound } from "lucide-react";
 import { Transaction } from "@/types";
 import { useAuth } from "@/contexts/AuthContext";
 import UserMenu from "@/components/user/UserMenu";
+import { getRecentTransactions } from "@/services/transactionService";
+import { toast } from "sonner";
 
 const Index = () => {
   const navigate = useNavigate();
   const { isAuthenticated, user } = useAuth();
+  const [recentTransactions, setRecentTransactions] = useState<Transaction[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Mock data
+  // Mock data for balance overview
   const balanceData = {
     totalBalance: 24560.75,
     income: 5430.20,
@@ -24,58 +27,7 @@ const Index = () => {
     investmentGrowth: 3.2,
   };
 
-  const recentTransactions: Transaction[] = [
-    {
-      id: "t1",
-      title: "Coffee Shop",
-      amount: 5.75,
-      date: "Today, 9:15 AM",
-      type: "expense",
-      category: "food",
-      currency: "USD",
-    },
-    {
-      id: "t2",
-      title: "Salary Deposit",
-      amount: 3200.00,
-      date: "Yesterday",
-      type: "income",
-      category: "salary",
-      currency: "USD",
-      isRecurring: true,
-      recurrence: "Monthly",
-    },
-    {
-      id: "t3",
-      title: "Amazon Purchase",
-      amount: 43.95,
-      date: "Mar 15, 2023",
-      type: "expense",
-      category: "shopping",
-      currency: "USD",
-    },
-    {
-      id: "t4",
-      title: "S&P 500 ETF",
-      amount: 500.00,
-      date: "Mar 12, 2023",
-      type: "investment",
-      category: "investment",
-      currency: "USD",
-      isRecurring: true,
-      recurrence: "Biweekly",
-    },
-    {
-      id: "t5",
-      title: "Fixed Deposit",
-      amount: 50000.00,
-      date: "Mar 10, 2023",
-      type: "investment",
-      category: "investment",
-      currency: "INR",
-    },
-  ];
-
+  // Mock data for investment chart (to be replaced with real data later)
   const investmentData = [
     { name: 'Jan', value: 15000 },
     { name: 'Feb', value: 15800 },
@@ -85,6 +37,32 @@ const Index = () => {
     { name: 'Jun', value: 18200 },
     { name: 'Jul', value: 18734 },
   ];
+
+  useEffect(() => {
+    const fetchRecentTransactions = async () => {
+      if (!isAuthenticated) return;
+      
+      try {
+        setIsLoading(true);
+        const { data, error } = await getRecentTransactions(5);
+        
+        if (error) {
+          throw new Error(error.message);
+        }
+        
+        if (data) {
+          setRecentTransactions(data);
+        }
+      } catch (error) {
+        console.error("Error fetching recent transactions:", error);
+        toast.error("Failed to load recent transactions");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchRecentTransactions();
+  }, [isAuthenticated]);
 
   const handleViewAllTransactions = () => {
     navigate('/transactions');
@@ -98,14 +76,15 @@ const Index = () => {
             <h1 className="text-2xl font-bold">FinFlow</h1>
             <p className="text-muted-foreground text-sm">Track your finances with ease</p>
           </div>
-          {isAuthenticated && <UserMenu user={user} />}
+          {isAuthenticated && user && <UserMenu user={user} />}
         </div>
         
         <BalanceSummary {...balanceData} />
         
         <RecentTransactions 
           transactions={recentTransactions} 
-          onViewAll={handleViewAllTransactions} 
+          onViewAll={handleViewAllTransactions}
+          isLoading={isLoading}
         />
         
         <InvestmentChartCard 

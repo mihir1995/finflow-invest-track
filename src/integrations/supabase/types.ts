@@ -9,7 +9,159 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      fixed_deposit_investments: {
+        Row: {
+          amount: number
+          bank_name: string
+          created_at: string | null
+          currency: Database["public"]["Enums"]["currency_code"]
+          id: string
+          interest_rate: number
+          maturity_date: string
+          start_date: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          bank_name: string
+          created_at?: string | null
+          currency?: Database["public"]["Enums"]["currency_code"]
+          id?: string
+          interest_rate: number
+          maturity_date: string
+          start_date: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          bank_name?: string
+          created_at?: string | null
+          currency?: Database["public"]["Enums"]["currency_code"]
+          id?: string
+          interest_rate?: number
+          maturity_date?: string
+          start_date?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          full_name: string | null
+          id: string
+          updated_at: string | null
+          username: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          full_name?: string | null
+          id: string
+          updated_at?: string | null
+          username?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          full_name?: string | null
+          id?: string
+          updated_at?: string | null
+          username?: string | null
+        }
+        Relationships: []
+      }
+      stock_investments: {
+        Row: {
+          created_at: string | null
+          currency: Database["public"]["Enums"]["currency_code"]
+          current_price: number | null
+          id: string
+          name: string
+          purchase_date: string
+          purchase_price: number
+          shares: number
+          ticker: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          currency?: Database["public"]["Enums"]["currency_code"]
+          current_price?: number | null
+          id?: string
+          name: string
+          purchase_date: string
+          purchase_price: number
+          shares: number
+          ticker: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          currency?: Database["public"]["Enums"]["currency_code"]
+          current_price?: number | null
+          id?: string
+          name?: string
+          purchase_date?: string
+          purchase_price?: number
+          shares?: number
+          ticker?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      transactions: {
+        Row: {
+          amount: number
+          category: string
+          created_at: string | null
+          currency: Database["public"]["Enums"]["currency_code"]
+          date: string
+          id: string
+          is_recurring: boolean
+          notes: string | null
+          recurrence: Database["public"]["Enums"]["recurrence_type"] | null
+          title: string
+          type: Database["public"]["Enums"]["transaction_type"]
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          category: string
+          created_at?: string | null
+          currency?: Database["public"]["Enums"]["currency_code"]
+          date?: string
+          id?: string
+          is_recurring?: boolean
+          notes?: string | null
+          recurrence?: Database["public"]["Enums"]["recurrence_type"] | null
+          title: string
+          type: Database["public"]["Enums"]["transaction_type"]
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          category?: string
+          created_at?: string | null
+          currency?: Database["public"]["Enums"]["currency_code"]
+          date?: string
+          id?: string
+          is_recurring?: boolean
+          notes?: string | null
+          recurrence?: Database["public"]["Enums"]["recurrence_type"] | null
+          title?: string
+          type?: Database["public"]["Enums"]["transaction_type"]
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -18,7 +170,16 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      currency_code: "USD" | "INR"
+      recurrence_type:
+        | "None"
+        | "Daily"
+        | "Weekly"
+        | "Biweekly"
+        | "Monthly"
+        | "Quarterly"
+        | "Yearly"
+      transaction_type: "expense" | "income" | "investment"
     }
     CompositeTypes: {
       [_ in never]: never

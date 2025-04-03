@@ -1,7 +1,5 @@
-
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useForm } from "react-hook-form";
 import MobileLayout from "@/components/layout/MobileLayout";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -19,6 +17,9 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { CurrencyCode, currencies } from "@/utils/currency";
+import { TransactionType, RecurrenceType } from "@/types";
+import { createTransaction, createStockInvestment, createFixedDeposit } from "@/services/transactionService";
+import { useAuth } from "@/contexts/AuthContext";
 
 type RecurrenceOption = "none" | "daily" | "weekly" | "biweekly" | "monthly" | "quarterly" | "yearly";
 
@@ -32,34 +33,117 @@ const recurrenceOptions: { value: RecurrenceOption; label: string }[] = [
   { value: "yearly", label: "Yearly" },
 ];
 
+const recurrenceTypeMap: Record<RecurrenceOption, RecurrenceType> = {
+  none: "None",
+  daily: "Daily",
+  weekly: "Weekly",
+  biweekly: "Biweekly",
+  monthly: "Monthly",
+  quarterly: "Quarterly",
+  yearly: "Yearly"
+};
+
 const AddTransaction = () => {
   const navigate = useNavigate();
-  const [transactionType, setTransactionType] = useState<"expense" | "income" | "investment">("expense");
+  const { isAuthenticated, user } = useAuth();
+  const [isLoading, setIsLoading] = useState(false);
+  const [transactionType, setTransactionType] = useState<TransactionType>("expense");
   const [isRecurring, setIsRecurring] = useState(false);
   const [recurrence, setRecurrence] = useState<RecurrenceOption>("none");
   const [currency, setCurrency] = useState<CurrencyCode>("USD");
   const [showStockFields, setShowStockFields] = useState(false);
   const [showFixedDepositFields, setShowFixedDepositFields] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const formData = new FormData(e.currentTarget);
-    const data: Record<string, string | boolean | RecurrenceOption | CurrencyCode> = {};
     
-    // Process form data entries
-    formData.forEach((value, key) => {
-      data[key] = value.toString();
-    });
+    if (!isAuthenticated || !user) {
+      toast.error("You must be logged in to add transactions");
+      navigate("/login");
+      return;
+    }
     
-    // Add custom fields
-    data.type = transactionType;
-    data.isRecurring = isRecurring;
-    data.recurrence = recurrence;
-    data.currency = currency;
+    setIsLoading(true);
     
-    console.log("Submitted data:", data);
-    toast.success("Transaction saved successfully");
-    navigate("/transactions");
+    try {
+      const formData = new FormData(e.currentTarget);
+      const title = formData.get('title') as string;
+      const amount = parseFloat(formData.get('amount') as string);
+      const category = formData.get('category') as string;
+      const date = formData.get('date') as string;
+      const notes = formData.get('notes') as string || undefined;
+      
+      if (transactionType === 'investment') {
+        if (showStockFields) {
+          const stockSymbol = formData.get('stockSymbol') as string;
+          const stockQuantity = parseFloat(formData.get('stockQuantity') as string);
+          
+          const { error } = await createStockInvestment({
+            name: title,
+            ticker: stockSymbol,
+            shares: stockQuantity,
+            purchase_price: amount,
+            currency,
+            purchase_date: date
+          });
+          
+          if (error) throw new Error(error.message);
+          
+        } else if (showFixedDepositFields) {
+          const bankName = formData.get('bankName') as string;
+          const interestRate = parseFloat(formData.get('interestRate') as string);
+          const maturityDate = formData.get('maturityDate') as string;
+          
+          const { error } = await createFixedDeposit({
+            bank_name: bankName,
+            amount,
+            interest_rate: interestRate,
+            start_date: date,
+            maturity_date: maturityDate,
+            currency
+          });
+          
+          if (error) throw new Error(error.message);
+          
+        } else {
+          const { error } = await createTransaction({
+            title,
+            amount,
+            date,
+            type: transactionType,
+            category,
+            currency,
+            is_recurring: isRecurring,
+            recurrence: isRecurring ? recurrenceTypeMap[recurrence] : undefined,
+            notes
+          });
+          
+          if (error) throw new Error(error.message);
+        }
+      } else {
+        const { error } = await createTransaction({
+          title,
+          amount,
+          date,
+          type: transactionType,
+          category,
+          currency,
+          is_recurring: isRecurring,
+          recurrence: isRecurring ? recurrenceTypeMap[recurrence] : undefined,
+          notes
+        });
+        
+        if (error) throw new Error(error.message);
+      }
+      
+      toast.success("Transaction saved successfully");
+      navigate("/transactions");
+    } catch (error) {
+      console.error("Error saving transaction:", error);
+      toast.error(`Failed to save transaction: ${(error as Error).message}`);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleInvestmentCategoryChange = (value: string) => {
@@ -79,7 +163,7 @@ const AddTransaction = () => {
           <Tabs 
             defaultValue="expense" 
             className="w-full"
-            onValueChange={(value) => setTransactionType(value as "expense" | "income" | "investment")}
+            onValueChange={(value) => setTransactionType(value as TransactionType)}
           >
             <TabsList className="grid grid-cols-3 mb-4">
               <TabsTrigger value="expense" className="flex items-center gap-1">
@@ -96,7 +180,6 @@ const AddTransaction = () => {
               </TabsTrigger>
             </TabsList>
             
-            {/* Form fields */}
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="amount">Amount</Label>
@@ -176,7 +259,6 @@ const AddTransaction = () => {
                 </Select>
               </div>
               
-              {/* Stock specific fields */}
               {showStockFields && (
                 <div className="space-y-2 bg-muted/30 p-3 rounded-md border border-muted">
                   <Label htmlFor="stockSymbol">Stock Symbol/Ticker</Label>
@@ -184,6 +266,7 @@ const AddTransaction = () => {
                     id="stockSymbol"
                     name="stockSymbol"
                     placeholder="e.g. AAPL, GOOGL"
+                    required={showStockFields}
                   />
                   
                   <Label htmlFor="stockQuantity">Quantity</Label>
@@ -193,18 +276,11 @@ const AddTransaction = () => {
                     type="number"
                     step="0.0001"
                     placeholder="Number of shares"
-                  />
-                  
-                  <Label htmlFor="googleFinanceCode">Google Finance Code</Label>
-                  <Input
-                    id="googleFinanceCode"
-                    name="googleFinanceCode"
-                    placeholder="e.g. NASDAQ:AAPL"
+                    required={showStockFields}
                   />
                 </div>
               )}
               
-              {/* Fixed Deposit specific fields */}
               {showFixedDepositFields && (
                 <div className="space-y-2 bg-muted/30 p-3 rounded-md border border-muted">
                   <Label htmlFor="bankName">Bank Name</Label>
@@ -212,6 +288,7 @@ const AddTransaction = () => {
                     id="bankName"
                     name="bankName"
                     placeholder="e.g. HDFC Bank, Chase"
+                    required={showFixedDepositFields}
                   />
                   
                   <Label htmlFor="interestRate">Interest Rate (%)</Label>
@@ -221,6 +298,7 @@ const AddTransaction = () => {
                     type="number"
                     step="0.01"
                     placeholder="e.g. 5.25"
+                    required={showFixedDepositFields}
                   />
                   
                   <Label htmlFor="maturityDate">Maturity Date</Label>
@@ -228,6 +306,7 @@ const AddTransaction = () => {
                     id="maturityDate"
                     name="maturityDate"
                     type="date"
+                    required={showFixedDepositFields}
                   />
                 </div>
               )}
@@ -294,8 +373,8 @@ const AddTransaction = () => {
                 />
               </div>
               
-              <Button className="w-full mt-4" type="submit">
-                Save Transaction
+              <Button className="w-full mt-4" type="submit" disabled={isLoading}>
+                {isLoading ? "Saving..." : "Save Transaction"}
               </Button>
             </form>
           </Tabs>
