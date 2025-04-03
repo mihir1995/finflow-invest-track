@@ -2,6 +2,8 @@
 import { supabase } from "@/integrations/supabase/client";
 import { Transaction, TransactionType, RecurrenceType, StockInvestment, FixedDepositInvestment } from "@/types";
 import { CurrencyCode } from "@/utils/currency";
+import { PostgrestResponse } from "@supabase/supabase-js";
+import { Database } from "@/integrations/supabase/types";
 
 // Interface for transaction data to be saved to Supabase
 export interface TransactionToSave {
@@ -14,6 +16,7 @@ export interface TransactionToSave {
   is_recurring: boolean;
   recurrence?: RecurrenceType;
   notes?: string;
+  user_id: string;
 }
 
 // Interface for stock investment data
@@ -24,6 +27,7 @@ export interface StockInvestmentToSave {
   purchase_price: number;
   currency: CurrencyCode;
   purchase_date: string;
+  user_id: string;
 }
 
 // Interface for fixed deposit data
@@ -34,76 +38,74 @@ export interface FixedDepositToSave {
   start_date: string;
   maturity_date: string;
   currency: CurrencyCode;
+  user_id: string;
 }
 
 // Create a new transaction
-export const createTransaction = async (transactionData: TransactionToSave): Promise<{ data: any; error: any }> => {
-  const { data, error } = await supabase
+export const createTransaction = async (transactionData: TransactionToSave): Promise<PostgrestResponse<any>> => {
+  const response = await supabase
     .from('transactions')
     .insert(transactionData)
-    .select()
-    .single();
+    .select();
   
-  return { data, error };
+  return response;
 };
 
 // Create a new stock investment
-export const createStockInvestment = async (stockData: StockInvestmentToSave): Promise<{ data: any; error: any }> => {
-  const { data, error } = await supabase
+export const createStockInvestment = async (stockData: StockInvestmentToSave): Promise<PostgrestResponse<any>> => {
+  const response = await supabase
     .from('stock_investments')
     .insert(stockData)
-    .select()
-    .single();
+    .select();
   
-  return { data, error };
+  return response;
 };
 
 // Create a new fixed deposit investment
-export const createFixedDeposit = async (depositData: FixedDepositToSave): Promise<{ data: any; error: any }> => {
-  const { data, error } = await supabase
+export const createFixedDeposit = async (depositData: FixedDepositToSave): Promise<PostgrestResponse<any>> => {
+  const response = await supabase
     .from('fixed_deposit_investments')
     .insert(depositData)
-    .select()
-    .single();
+    .select();
   
-  return { data, error };
+  return response;
 };
 
 // Get all transactions for the current user
-export const getUserTransactions = async (): Promise<{ data: Transaction[] | null; error: any }> => {
-  const { data, error } = await supabase
+export const getUserTransactions = async (): Promise<PostgrestResponse<any>> => {
+  const response = await supabase
     .from('transactions')
     .select('*')
     .order('date', { ascending: false });
   
-  return { data, error };
+  return response;
 };
 
 // Get recent transactions (limited number)
-export const getRecentTransactions = async (limit: number = 5): Promise<{ data: Transaction[] | null; error: any }> => {
-  const { data, error } = await supabase
+export const getRecentTransactions = async (limit: number = 5): Promise<PostgrestResponse<any>> => {
+  const response = await supabase
     .from('transactions')
     .select('*')
     .order('date', { ascending: false })
     .limit(limit);
   
-  return { data, error };
+  return response;
 };
 
 // Get stock investments
-export const getStockInvestments = async (): Promise<{ data: StockInvestment[] | null; error: any }> => {
-  const { data, error } = await supabase
+export const getStockInvestments = async (): Promise<PostgrestResponse<any>> => {
+  const response = await supabase
     .from('stock_investments')
     .select('*');
   
-  return { data, error };
+  return response;
 };
 
 // Get fixed deposit investments
-export const getFixedDepositInvestments = async (): Promise<{ data: FixedDepositInvestment[] | null; error: any }> => {
-  const { data, error } = await supabase
+export const getFixedDepositInvestments = async (): Promise<PostgrestResponse<any>> => {
+  const response = await supabase
     .from('fixed_deposit_investments')
     .select('*');
   
-  return { data, error };
+  return response;
 };
